@@ -258,8 +258,8 @@ class Game
     this.ball.PutOnKickOff();
     this.minute = 1;
 
-    this.hTeam = new Team(true);
-    this.aTeam = new Team(false);
+    this.hTeam = new Team("", true);
+    this.aTeam = new Team("", false);
 
     this.UpdatePlayers();
   }
@@ -363,12 +363,13 @@ class Game
 
 class Team
 {
-  constructor(side = true)
+  constructor(inputSafeString = "", side = true)
   {
     this.players = [];
     this.boolPlayers = [];
     this.name = "Borussia Dortmund";
     this.shortName = "BVB";
+    this.safeString = inputSafeString;
 
     if (side)
     {
@@ -382,7 +383,11 @@ class Team
       this.boolPlayers.push([true, true, true]);
     }
 
-    this.CreatPlayersFromBool();
+    if (this.safeString != "")
+    {
+      this.LoadFromString();
+    }
+    this.CreatPlayersFromBool(true);
   }
 
   CreatPlayersFromBool(force = false)
@@ -405,6 +410,59 @@ class Team
         }
       }
       this.players.push(bufar);
+    }
+  }
+
+  UpdateString()
+  {
+    this.safeString = "";
+    this.safeString += this.name + "/";
+    this.safeString += this.shortName + "/";
+    for (var i = 0; i < this.boolPlayers.length; i++)
+    {
+      for (var j = 0; j < this.boolPlayers[i].length; j++)
+      {
+        if (this.boolPlayers[i][j])
+        {
+          this.safeString += "1";
+        }
+        else
+        {
+          this.safeString += "0";
+        }
+      }
+    }
+  }
+
+  LoadFromString()
+  {
+    if (this.safeString == "")
+    {
+      console.log("Tried to load a team from an empty string");
+      return false;
+    }
+    console.log(this.safeString);
+    var buf = this.safeString.split("/");
+    this.name = buf[0];
+    this.shortName = buf[1];
+
+    this.boolPlayers = [];
+    for (var i = 0; i < 4; i++)
+    {
+      var bufArray = [];
+      for (var j = 0; j < 3; j++)
+      {
+        if (buf[2][(i * 3) + j] == "1")
+        {
+          bufArray.push(true);
+        }
+        else
+        {
+          bufArray.push(false);
+        }
+      }
+
+      this.boolPlayers.push(bufArray);
     }
   }
 }
@@ -456,11 +514,13 @@ class Menu
   constructor()
   {
     AdjustCanvasSize();
+    this.LoadAllTeams();
     this.currentState = 1; //0 is in a game, My Teams is 5
     this.menuStart = can.width / 3;
     this.menuWidth = this.menuStart;
     this.eigthHeight = can.height / 8;
     this.selectedTeam = 0;
+    this.isSafed = true;
     can.addEventListener("click", this.OnClick.bind(this), false);
 
     this.mainMenuButs = {};
@@ -476,10 +536,37 @@ class Menu
     this.myTeamsMenuButs.NewTeam = new CanvasButton(this.menuStart * 2, this.eigthHeight, this.menuWidth / 2, this.eigthHeight * 0.5, "New Team", (2.5 / 100) * can.width + "px Arial");
     this.myTeamsMenuButs.Preview = new CanvasButton(this.menuStart / 2, this.eigthHeight * 2, this.menuWidth * 2, this.eigthHeight * 4.5, "");
     this.myTeamsMenuButs.Down = new CanvasButton(this.menuStart, this.eigthHeight * 7, this.menuWidth, this.eigthHeight * 0.5, "Down");
+    this.myTeamsMenuButs.Safe = new CanvasButton(this.menuStart / 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Safe", (2.5 / 100) * can.width + "px Arial");
     this.myTeamsMenuButs.Back = new CanvasButton(this.menuStart * 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
     this.g = new Game();
     this.Resize();
+  }
+
+  SafeAllTeams()
+  {
+    localStorage.teamCount = allTeams.length;
+    for (var i = 0; i < allTeams.length; i++)
+    {
+      allTeams[i].UpdateString();
+      localStorage["team" + i] = allTeams[i].safeString;
+    }
+  }
+
+  LoadAllTeams()
+  {
+    allTeams = [];
+    if (localStorage.teamCount === "undefiend")
+    {
+      allTeams.push(new Team("", true));
+      allTeams.push(new Team("", false));
+      return;
+    }
+
+    for (var i = 0; i < localStorage.teamCount; i++)
+    {
+      allTeams.push(new Team(localStorage["team" + i]));
+    }
   }
 
   RedoMyTeamsMenuButs()
@@ -636,6 +723,10 @@ class Menu
             this.selectedTeam = allTeams.length - 1;
           }
           this.ChangeCurrentState(5);
+        }
+        else if (this.myTeamsMenuButs.Safe.ClickedOn(event.x, event.y))
+        {
+          this.SafeAllTeams();
         }
         break;
       case 6: //the edit team menu
