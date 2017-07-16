@@ -515,11 +515,15 @@ class Menu
   {
     AdjustCanvasSize();
     this.LoadAllTeams();
-    this.currentState = 1; //0 is in a game, My Teams is 5
+    this.currentState = 1; //0 is in a game, quickMatchMenu is 2, My Teams is 5, Team edit is 6,
     this.menuStart = can.width / 3;
     this.menuWidth = this.menuStart;
     this.eigthHeight = can.height / 8;
     this.selectedTeam = 0;
+
+    this.aTeam = 0;
+    this.hTeam = 1;
+
     this.isSafed = true;
     can.addEventListener("click", this.OnClick.bind(this), false);
 
@@ -530,6 +534,12 @@ class Menu
     this.mainMenuButs.MyTeams = new CanvasButton(this.menuStart, this.eigthHeight * 4, this.menuWidth, this.eigthHeight * 0.75, "My Teams");
     this.mainMenuButs.Options = new CanvasButton(this.menuStart, this.eigthHeight * 5, this.menuWidth, this.eigthHeight * 0.75, "Options");
 
+    this.quickMatchMenuButs = {};
+    this.quickMatchMenuButs.Start = new CanvasButton(this.menuStart, this.eigthHeight * 6, this.menuWidth, this.eigthHeight, "Start");
+    this.quickMatchMenuButs.hTeamUp = new CanvasButton(0, this.eigthHeight * 2.5, this.menuWidth * 1.3, this.eigthHeight * 0.5, "Up");
+    this.quickMatchMenuButs.hTeamDown = new CanvasButton(0, this.eigthHeight * 4, this.menuWidth * 1.3, this.eigthHeight * 0.5, "Down");
+    this.quickMatchMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
+
     this.myTeamsMenuButs = {};
     this.myTeamsMenuButs.EditTeam = new CanvasButton(this.menuStart / 2, this.eigthHeight, this.menuWidth / 2, this.eigthHeight * 0.5, "Edit Team", (2.5 / 100) * can.width + "px Arial");
     this.myTeamsMenuButs.Up = new CanvasButton(this.menuStart, this.eigthHeight, this.menuWidth, this.eigthHeight * 0.5, "Up");
@@ -539,12 +549,17 @@ class Menu
     this.myTeamsMenuButs.Safe = new CanvasButton(this.menuStart / 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Safe", (2.5 / 100) * can.width + "px Arial");
     this.myTeamsMenuButs.Back = new CanvasButton(this.menuStart * 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
+    this.editTeamsMenuButs = {};
+    this.editTeamsMenuButs.Delete = new CanvasButton(this.menuStart / 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Delete", (2.5 / 100) * can.width + "px Arial");
+    this.editTeamsMenuButs.Back = new CanvasButton(this.menuStart * 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
+
     this.g = new Game();
     this.Resize();
   }
 
   SafeAllTeams()
   {
+    this.isSafed = true;
     localStorage.teamCount = allTeams.length;
     for (var i = 0; i < allTeams.length; i++)
     {
@@ -555,6 +570,7 @@ class Menu
 
   LoadAllTeams()
   {
+    this.isSafed = true;
     allTeams = [];
     if (localStorage.teamCount === "undefiend")
     {
@@ -601,7 +617,6 @@ class Menu
   {
     try
     {
-      this.editTeamsMenuButs = {};
       this.editTeamsMenuButs.Name = new CanvasButton(this.menuStart, this.eigthHeight, this.menuWidth, this.eigthHeight * 0.5, allTeams[this.selectedTeam].name, (2.5 / 100) * can.width + "px Arial");
       this.editTeamsMenuButs.ShortName = new CanvasButton(this.menuStart, this.eigthHeight * 1.5, this.menuWidth, this.eigthHeight * 0.5, allTeams[this.selectedTeam].shortName, (2.5 / 100) * can.width + "px Arial");
       for (var x = 1; x <= 4; x++)
@@ -621,13 +636,24 @@ class Menu
           this.editTeamsMenuButs[x + "/" + y] = new CanvasButton(this.menuStart * x / 2 + this.menuWidth / 12, this.eigthHeight * 2.5 + (this.eigthHeight * (y / 1.5)), this.menuWidth / 3, this.eigthHeight * 0.5, allTeams[this.selectedTeam].players[x - 1][y - 1], (5 / 100) * can.width + "px Arial", colour);
         }
       }
-      this.editTeamsMenuButs.Back = new CanvasButton(this.menuStart * 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
     }
     catch (err)
     {
       console.log("RedoEditMenuButs failed to call", err)
     }
 
+  }
+
+  RedoQuickGameMenuButs()
+  {
+    if (allTeams[this.hTeam].name.length > 7)
+    {
+      this.quickMatchMenuButs.hTeamName = new CanvasButton(0, this.eigthHeight * 3, this.menuWidth * 1.3, this.eigthHeight, allTeams[this.hTeam].name, (2.5 / 100) * can.width + "px Arial");
+    }
+    else
+    {
+      this.quickMatchMenuButs.hTeamName = new CanvasButton(0, this.eigthHeight * 3, this.menuWidth * 1.3, this.eigthHeight, allTeams[this.hTeam].name);
+    }
   }
 
   DrawMenu()
@@ -642,6 +668,15 @@ class Menu
           if (this.mainMenuButs.hasOwnProperty(key))
           {
             this.mainMenuButs[key].Draw();
+          }
+        }
+        break;
+      case 2:
+        for (var key in this.quickMatchMenuButs)
+        {
+          if (this.quickMatchMenuButs.hasOwnProperty(key))
+          {
+            this.quickMatchMenuButs[key].Draw();
           }
         }
         break;
@@ -677,11 +712,39 @@ class Menu
       case 1: //the main menu
         if(this.mainMenuButs.QuickMatch.ClickedOn(event.x, event.y))
         {
-          this.StartGame();
+          this.ChangeCurrentState(2);
         }
         else if (this.mainMenuButs.MyTeams.ClickedOn(event.x, event.y))
         {
           this.ChangeCurrentState(5);
+        }
+        break;
+      case 2: //inside QuickMatch
+        if (this.quickMatchMenuButs.Back.ClickedOn(event.x,event.y))
+        {
+          this.ChangeCurrentState(1);
+        }
+        else if (this.quickMatchMenuButs.Start.ClickedOn(event.x,event.y))
+        {
+          this.StartGame();
+        }
+        else if (this.quickMatchMenuButs.hTeamUp.ClickedOn(event.x,event.y))
+        {
+          this.hTeam++;
+          if (this.hTeam == allTeams.length)
+          {
+            this.hTeam = 0;
+          }
+          this.ChangeCurrentState(2);
+        }
+        else if (this.quickMatchMenuButs.hTeamDown.ClickedOn(event.x,event.y))
+        {
+          this.hTeam--;
+          if (this.hTeam == -1)
+          {
+            this.hTeam = allTeams.length;
+          }
+          this.ChangeCurrentState(2);
         }
         break;
       case 5: //inside My Teams
@@ -689,6 +752,7 @@ class Menu
         {
           if (allTeams.length)
           {
+            this.isSafed = false;
             this.ChangeCurrentState(6);
           }
           else
@@ -700,10 +764,22 @@ class Menu
         {
           allTeams.push(new Team());
           this.selectedTeam = allTeams.length - 1;
+          this.isSafed = false;
           this.ChangeCurrentState(6);
         }
         else if (this.myTeamsMenuButs.Back.ClickedOn(event.x, event.y))
         {
+          if (!this.isSafed)
+          {
+            if(confirm("Current changes are unsafed and will be discarded, do you really want to go back?"))
+            {
+              this.LoadAllTeams();
+            }
+            else
+            {
+              return;
+            }
+          }
           this.ChangeCurrentState(1);
         }
         else if (this.myTeamsMenuButs.Up.ClickedOn(event.x, event.y))
@@ -752,6 +828,14 @@ class Menu
             this.ChangeCurrentState(6);
           }
         }
+        else if (this.editTeamsMenuButs.Delete.ClickedOn(event.x, event.y))
+        {
+          if (confirm("Do you really want to delete " + allTeams[this.selectedTeam].name + "?"))
+          {
+            allTeams.splice(this.selectedTeam, 1);
+          }
+          this.ChangeCurrentState(5);
+        }
         for (var x = 1; x <= 4; x++)
         {
           for (var y = 1; y <= 3; y++)
@@ -774,9 +858,13 @@ class Menu
     {
       this.RedoEditMenuButs();
     }
-    else if (newState = 5)
+    else if (newState == 5)
     {
       this.RedoMyTeamsMenuButs();
+    }
+    else if (newState == 2)
+    {
+      this.RedoQuickGameMenuButs();
     }
     this.DrawMenu();
   }
