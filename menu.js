@@ -779,38 +779,22 @@ class Menu
         }
         else if (this.quickMatchMenuButs.hTeamUp.ClickedOn(event.x,event.y))
         {
-          this.hTeam++;
-          if (this.hTeam == allTeams.length)
-          {
-            this.hTeam = 0;
-          }
+          this.hTeam = this.IncreaseTeam(this.hTeam, true);
           this.ChangeCurrentState(2);
         }
         else if (this.quickMatchMenuButs.hTeamDown.ClickedOn(event.x,event.y))
         {
-          this.hTeam--;
-          if (this.hTeam == -1)
-          {
-            this.hTeam = allTeams.length;
-          }
+          this.hTeam = this.DecreaseTeam(this.hTeam, true);
           this.ChangeCurrentState(2);
         }
         else if (this.quickMatchMenuButs.aTeamUp.ClickedOn(event.x,event.y))
         {
-          this.aTeam++;
-          if (this.aTeam == allTeams.length)
-          {
-            this.aTeam = 0;
-          }
+          this.aTeam = this.IncreaseTeam(this.aTeam, true);
           this.ChangeCurrentState(2);
         }
         else if (this.quickMatchMenuButs.aTeamDown.ClickedOn(event.x,event.y))
         {
-          this.aTeam--;
-          if (this.aTeam == -1)
-          {
-            this.aTeam = allTeams.length - 1;
-          }
+          this.aTeam = this.DecreaseTeam(this.aTeam, true);
           this.ChangeCurrentState(2);
         }
         break;
@@ -851,20 +835,12 @@ class Menu
         }
         else if (this.myTeamsMenuButs.Up.ClickedOn(event.x, event.y))
         {
-          this.selectedTeam++;
-          if (this.selectedTeam == allTeams.length)
-          {
-            this.selectedTeam = 0;
-          }
+          this.selectedTeam = this.IncreaseTeam(this.selectedTeam);
           this.ChangeCurrentState(5);
         }
         else if (this.myTeamsMenuButs.Down.ClickedOn(event.x, event.y))
         {
-          this.selectedTeam--;
-          if (this.selectedTeam == -1)
-          {
-            this.selectedTeam = allTeams.length - 1;
-          }
+          this.selectedTeam = this.DecreaseTeam(this.selectedTeam);
           this.ChangeCurrentState(5);
         }
         else if (this.myTeamsMenuButs.Safe.ClickedOn(event.x, event.y))
@@ -917,6 +893,44 @@ class Menu
         }
         break;
     }
+  }
+
+  DecreaseTeam(currInd, checkForDoubles = false)
+  {
+    currInd--;
+    console.log(currInd, this.aTeam, this.hTeam);
+    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    {
+      currInd--;
+    }
+    if (currInd < 0)
+    {
+      currInd = allTeams.length - 1;
+    }
+    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    {
+      currInd--;
+    }
+
+    return currInd;
+  }
+
+  IncreaseTeam(currInd, checkForDoubles = false)
+  {
+    currInd++;
+    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    {
+      currInd++;
+    }
+    if (currInd >= allTeams.length)
+    {
+      currInd = 0;
+    }
+    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    {
+      currInd++;
+    }
+     return currInd;
   }
 
   KeyStroke(event)
