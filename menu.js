@@ -6,6 +6,7 @@ var fieldHeight = can.height - menuSize;
 var fieldMiddle = fieldHeight / 2 + menuSize
 var keeperPadding = 150;
 var dice = 1;
+var diceHistory = [];
 var turn = 0;
 var half = 0;
 
@@ -111,6 +112,8 @@ class Football
     {
       dice = Math.floor(Math.random() * 6) + 1;
     }
+
+    diceHistory.push(dice);
 
     if (dice == 1)
     {
@@ -339,8 +342,19 @@ class Game
     canCTX.textBaseline = "middle";
     canCTX.clearRect(0, 0, can.width, can.height);
 
-    canCTX.font = (2.5 / 100) * can.width + "px Arial"
+    //the dice
+    canCTX.font = (5 / 100) * can.width + "px Arial";
     canCTX.fillText(dice, can.width / 2,50);
+    canCTX.font = (2.5 / 100) * can.width + "px Arial";
+    for (var i = 1; i <= 5; i++) //i starts at one so we access the diceHistory.length - 1 item first
+    {
+      if (i > diceHistory.length)
+      {
+        break;
+      }
+      canCTX.fillText(diceHistory[diceHistory.length - i], can.width / 2.25, 50 + i * 17.5);
+    }
+    canCTX.font = (2.5 / 100) * can.width + "px Arial";
 
     //the time
     if ((this.minute <= 45 && half == 0) || (this.minute <= 90 && half == 1))
@@ -353,7 +367,32 @@ class Game
     }
 
     //the score
+    canCTX.font = (2.5 / 100) * can.width + "px Arial";
+    var scoreHomeIndex = 0, scoreAwayIndex = 0;
     canCTX.fillText(this.hTeam.shortName + " " + score[0].length + ":" + score[1].length + " " + this.aTeam.shortName, 3 * can.width / 4,50);
+    for (var i = 1; i <= 5; i++)
+    {
+      if (i > score[0].length + score[1].length)
+      {
+        break;
+      }
+      if (((score[0].length - scoreHomeIndex) && !(score[1].length - scoreAwayIndex)) || (score[0][score[0].length - scoreHomeIndex - 1] > score[1][score[1].length - scoreAwayIndex - 1]))
+      {
+        canCTX.fillText("Minute " + score[0][score[0].length - scoreHomeIndex - 1] + ":     " + (score[0].length - (scoreHomeIndex)) + ":" + (score[1].length - scoreAwayIndex), 3 * can.width / 4, 50 + i * 17.5);
+        scoreHomeIndex++;
+      }
+      else if (((score[1].length - scoreAwayIndex) && !(score[0].length - scoreHomeIndex)) || (score[0][score[0].length - scoreHomeIndex - 1] < score[1][score[1].length - scoreAwayIndex - 1]))
+      {
+        canCTX.fillText("Minute " + score[1][score[1].length - scoreAwayIndex - 1] + ":     " + (score[0].length - scoreHomeIndex) + ":" + (score[1].length - (scoreAwayIndex)), 3 * can.width / 4, 50 + i * 17.5);
+        scoreAwayIndex++;
+      }
+      else
+      {
+        break;
+      }
+
+    }
+    canCTX.font = (2.5 / 100) * can.width + "px Arial";
 
     //the players
     var negativPlayers = -1;
@@ -898,16 +937,15 @@ class Menu
   DecreaseTeam(currInd, checkForDoubles = false)
   {
     currInd--;
-    console.log(currInd, this.aTeam, this.hTeam);
-    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    if ((currInd == this.aTeam || currInd == this.hTeam) && checkForDoubles)
     {
       currInd--;
     }
     if (currInd < 0)
     {
-      currInd = allTeams.length - 1;
+      currInd = allTeams.length + currInd;
     }
-    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    if ((currInd == this.aTeam || currInd == this.hTeam) && checkForDoubles)
     {
       currInd--;
     }
@@ -918,15 +956,15 @@ class Menu
   IncreaseTeam(currInd, checkForDoubles = false)
   {
     currInd++;
-    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    if ((currInd == this.aTeam || currInd == this.hTeam) && checkForDoubles)
     {
       currInd++;
     }
     if (currInd >= allTeams.length)
     {
-      currInd = 0;
+      currInd = currInd - allTeams.length;
     }
-    if (currInd == this.aTeam && this.hTeam == currInd && checkForDoubles)
+    if ((currInd == this.aTeam || currInd == this.hTeam) && checkForDoubles)
     {
       currInd++;
     }
@@ -983,6 +1021,7 @@ class Menu
   EndOfGame()
   {
     this.currentState = 1;
+    diceHistory = [];
     this.DrawMenu();
   }
 
