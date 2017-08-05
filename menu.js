@@ -352,7 +352,7 @@ class Game
       {
         break;
       }
-      canCTX.fillText(diceHistory[diceHistory.length - i], can.width / 2.25, 50 + i * 17.5);
+      canCTX.fillText(diceHistory[diceHistory.length - i], can.width / 2.25, 50 + i * menuSize / 10);
     }
     canCTX.font = (2.5 / 100) * can.width + "px Arial";
 
@@ -378,12 +378,12 @@ class Game
       }
       if (((score[0].length - scoreHomeIndex) && !(score[1].length - scoreAwayIndex)) || (score[0][score[0].length - scoreHomeIndex - 1] > score[1][score[1].length - scoreAwayIndex - 1]))
       {
-        canCTX.fillText("Minute " + score[0][score[0].length - scoreHomeIndex - 1] + ":     " + (score[0].length - (scoreHomeIndex)) + ":" + (score[1].length - scoreAwayIndex), 3 * can.width / 4, 50 + i * 17.5);
+        canCTX.fillText("Minute " + score[0][score[0].length - scoreHomeIndex - 1] + ":     " + (score[0].length - (scoreHomeIndex)) + ":" + (score[1].length - scoreAwayIndex), 3 * can.width / 4, 50 + i * menuSize / 10);
         scoreHomeIndex++;
       }
       else if (((score[1].length - scoreAwayIndex) && !(score[0].length - scoreHomeIndex)) || (score[0][score[0].length - scoreHomeIndex - 1] < score[1][score[1].length - scoreAwayIndex - 1]))
       {
-        canCTX.fillText("Minute " + score[1][score[1].length - scoreAwayIndex - 1] + ":     " + (score[0].length - scoreHomeIndex) + ":" + (score[1].length - (scoreAwayIndex)), 3 * can.width / 4, 50 + i * 17.5);
+        canCTX.fillText("Minute " + score[1][score[1].length - scoreAwayIndex - 1] + ":     " + (score[0].length - scoreHomeIndex) + ":" + (score[1].length - (scoreAwayIndex)), 3 * can.width / 4, 50 + i * menuSize / 10);
         scoreAwayIndex++;
       }
       else
@@ -588,7 +588,7 @@ class Menu
   {
     AdjustCanvasSize();
     this.LoadAllTeams();
-    this.currentState = 1; //0 is in a game, quickMatchMenu is 2, My Teams is 5, Team edit is 6,
+    this.currentState = 1; //0 is in a game, quickMatchMenu is 2, My Teams is 5, Team edit is 6, the match finished screen is 7
     this.menuStart = can.width / 3;
     this.menuWidth = this.menuStart;
     this.eigthHeight = can.height / 8;
@@ -631,6 +631,10 @@ class Menu
     this.editTeamsMenuButs = {};
     this.editTeamsMenuButs.Delete = new CanvasButton(this.menuStart / 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Delete", (2.5 / 100) * can.width + "px Arial");
     this.editTeamsMenuButs.Back = new CanvasButton(this.menuStart * 2, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
+
+    this.gameFinishedMenuButs = {};
+    this.gameFinishedMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
+
 
     this.g = new Game();
     this.Resize();
@@ -744,6 +748,29 @@ class Menu
     }
   }
 
+  RedoGameFinishedMenuButs()
+  {
+    var winningTeam = "";
+    var loosingTeam = "";
+    if(score[0].length > score[1].length)
+    {
+      winningTeam = allTeams[this.hTeam].name;
+      loosingTeam = allTeams[this.aTeam].name;
+    }
+    else if (score[0].length < score[1].length)
+    {
+      winningTeam = allTeams[this.aTeam].name;
+      loosingTeam = allTeams[this.hTeam].name;
+    }
+    else
+    {
+      this.gameFinishedMenuButs.Score = new CanvasButton(this.menuStart, this.eigthHeight * 3, this.menuWidth / 2, this.eigthHeight * 0.5, allTeams[this.hTeam].name + " and " + allTeams[this.aTeam].name + " are Tied", (2.5 / 100) * can.width + "px Arial", undefined, false);
+      return;
+    }
+    this.gameFinishedMenuButs.Score = new CanvasButton(this.menuStart, this.eigthHeight * 3, this.menuWidth / 2, this.eigthHeight * 0.5, winningTeam + " has won against " + loosingTeam, (2.5 / 100) * can.width + "px Arial", undefined, false);
+  }
+
+
   DrawMenu()
   {
     canCTX.clearRect(0, 0, can.width, can.height);
@@ -786,6 +813,15 @@ class Menu
           }
         }
         break;
+      case 7:
+      for (var key in this.gameFinishedMenuButs)
+      {
+        if (this.gameFinishedMenuButs.hasOwnProperty(key))
+        {
+          this.gameFinishedMenuButs[key].Draw();
+        }
+      }
+      break;
       default:
       break;
     }
@@ -931,6 +967,11 @@ class Menu
           }
         }
         break;
+      case 7:
+      if (this.gameFinishedMenuButs.Back.ClickedOn(event.x, event.y))
+      {
+        this.ChangeCurrentState(1)
+      }
     }
   }
 
@@ -990,17 +1031,20 @@ class Menu
   ChangeCurrentState(newState)
   {
     this.currentState = newState;
-    if (newState == 6)
+    switch (newState)
     {
+    case (6):
       this.RedoEditMenuButs();
-    }
-    else if (newState == 5)
-    {
+      break;
+    case (5):
       this.RedoMyTeamsMenuButs();
-    }
-    else if (newState == 2)
-    {
+      break;
+    case (2):
       this.RedoQuickGameMenuButs();
+      break;
+    case (7):
+      this.RedoGameFinishedMenuButs();
+      break;
     }
     this.DrawMenu();
   }
@@ -1020,9 +1064,8 @@ class Menu
 
   EndOfGame()
   {
-    this.currentState = 1;
+    this.ChangeCurrentState(7);
     diceHistory = [];
-    this.DrawMenu();
   }
 
   Resize()
