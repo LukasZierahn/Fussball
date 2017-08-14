@@ -750,24 +750,31 @@ class Menu
 
   RedoGameFinishedMenuButs()
   {
-    var winningTeam = "";
-    var loosingTeam = "";
-    if(score[0].length > score[1].length)
+    this.gameFinishedMenuButs.Score = new CanvasButton(this.menuStart, this.eigthHeight * 2, this.menuStart, this.eigthHeight, allTeams[this.hTeam].shortName +  " " + score[0].length.toString() + " : " + score[1].length.toString() + " " + allTeams[this.aTeam].shortName, undefined, undefined, false);
+
+    var scoreHomeIndex = 0, scoreAwayIndex = 0;
+    for (var i = 1; i <= score[0].length + score[1].length; i++)
     {
-      winningTeam = allTeams[this.hTeam].name;
-      loosingTeam = allTeams[this.aTeam].name;
+      if (i > score[0].length + score[1].length)
+      {
+        break;
+      }
+      if (((score[0].lenght - scoreHomeIndex - 1) && !(scoreAwayIndex - score[1].length - 1)) || (score[0][scoreHomeIndex] < score[1][scoreAwayIndex]))
+      {
+        this.gameFinishedMenuButs[i] = new CanvasButton(this.menuStart, this.eigthHeight * (3 + ((i - 1) / 3)), this.menuStart, this.eigthHeight / 3, "Minute " + score[0][scoreHomeIndex] + ":     " + (scoreHomeIndex + 1) + ":" + (scoreAwayIndex), (2.5 / 100) * can.width + "px Arial", undefined, false);
+        scoreHomeIndex++;
+      }
+      else if (((scoreAwayIndex - score[1].length - 1) && !(score[0].lenght - scoreHomeIndex -1)) || (score[0][scoreHomeIndex] > score[1][scoreAwayIndex]))
+      {
+        this.gameFinishedMenuButs[i] = new CanvasButton(this.menuStart, this.eigthHeight * (3 + ((i - 1) / 3)), this.menuStart, this.eigthHeight / 3, "Minute " + score[1][scoreAwayIndex] + ":     " + (scoreHomeIndex) + ":" + (scoreAwayIndex + 1), (2.5 / 100) * can.width + "px Arial", undefined, false);
+        scoreAwayIndex++;
+      }
+      else
+      {
+        break;
+      }
+
     }
-    else if (score[0].length < score[1].length)
-    {
-      winningTeam = allTeams[this.aTeam].name;
-      loosingTeam = allTeams[this.hTeam].name;
-    }
-    else
-    {
-      this.gameFinishedMenuButs.Score = new CanvasButton(this.menuStart, this.eigthHeight * 3, this.menuWidth / 2, this.eigthHeight * 0.5, allTeams[this.hTeam].name + " and " + allTeams[this.aTeam].name + " are Tied", (2.5 / 100) * can.width + "px Arial", undefined, false);
-      return;
-    }
-    this.gameFinishedMenuButs.Score = new CanvasButton(this.menuStart, this.eigthHeight * 3, this.menuWidth / 2, this.eigthHeight * 0.5, winningTeam + " has won against " + loosingTeam, (2.5 / 100) * can.width + "px Arial", undefined, false);
   }
 
 
