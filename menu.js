@@ -578,7 +578,7 @@ class selectMenu
 {
   constructor()
   {
-    this.currentlySelected = [];
+    this.selected = [];
     this.toChooseFrom = [];
     this.selectedPage = 0;
     this.toChooseFromPage = 0;
@@ -587,7 +587,7 @@ class selectMenu
 
     for (var i = 0; i < allTeams.length; i++)
     {
-      this.toChooseFromPage.push(i);
+      this.toChooseFrom.push(i);
     }
   }
 
@@ -640,6 +640,30 @@ class selectMenu
     else
     {
       this.selectedIndex = max;
+    }
+  }
+
+  GetToChooseFrom(index)
+  {
+    if (index + this.toChooseFromPage * this.teamsShownPerPage < this.toChooseFrom.length)
+    {
+      return index + this.toChooseFromPage * this.teamsShownPerPage;
+    }
+    else
+    {
+      return undefined;
+    }
+  }
+
+  GetSelected(index)
+  {
+    if (index + this.selectedPage * this.teamsShownPerPage < this.selected.length)
+    {
+      return index + this.selectedPage * this.teamsShownPerPage;
+    }
+    else
+    {
+      return undefined;
     }
   }
 
@@ -710,6 +734,9 @@ class Menu
     this.autoplay = false;
     this.debugMode = true;
 
+    this.cup = new Cup();
+    this.selectedMenu = new selectMenu();
+
     this.aTeam = 0;
     this.hTeam = 1;
 
@@ -750,7 +777,7 @@ class Menu
     this.gameFinishedMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
     this.cupMenuButs = {};
-    this.gameFinishedMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
+    this.cupMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
 
     this.g = new Game();
@@ -894,6 +921,33 @@ class Menu
     }
   }
 
+  RedoCupMenuButs()
+  {
+    this.cupMenuButs.test = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
+    var textBuf = undefined;
+    for (var selectedIndex = 0; selectedIndex < this.selectedMenu.teamsShownPerPage; selectedIndex++)
+    {
+      console.log(this.selectedMenu.GetSelected(selectedIndex));
+      if (allTeams[this.selectedMenu.GetSelected(selectedIndex)] == undefined)
+      {
+        break;
+      }
+      textBuf = allTeams[this.selectedMenu.GetSelected(selectedIndex)].name;
+      this.cupMenuButs["selected" + selectedIndex] = new CanvasButton(this.menuStart * 1.25, this.eightHeight * selectedIndex, this.menuWidth / 3, this.eightHeight, textBuf, false);
+    }
+
+    for (var toChooseFromIndex = 0; toChooseFromIndex < this.selectedMenu.teamsShownPerPage; toChooseFromIndex++)
+    {
+      console.log(this.selectedMenu.GetToChooseFrom(toChooseFromIndex));
+      if (allTeams[this.selectedMenu.GetToChooseFrom(toChooseFromIndex)] == undefined)
+      {
+        break;
+      }
+      textBuf = allTeams[this.selectedMenu.GetToChooseFrom(toChooseFromIndex)].name;
+      console.log(textBuf);
+      this.cupMenuButs["toChooseFrom" + toChooseFromIndex] = new CanvasButton(this.menuStart, this.eightHeight /*+ this.eightHeight * toChooseFromIndex*/, this.menuWidth, this.eightHeight, "test");
+    }
+  }
 
   DrawMenu()
   {
@@ -920,11 +974,11 @@ class Menu
         }
         break;
       case 3:
-        for (var key in this.gameFinishedMenuButs)
+        for (var key in this.cupMenuButs)
         {
-          if (this.gameFinishedMenuButs.hasOwnProperty(key))
+          if (this.cupMenuButs.hasOwnProperty(key))
           {
-            this.gameFinishedMenuButs[key].Draw();
+            this.cupMenuButs[key].Draw();
           }
         }
         break;
@@ -1177,14 +1231,17 @@ class Menu
     this.currentState = newState;
     switch (newState)
     {
-    case (6):
-      this.RedoEditMenuButs();
+    case (2):
+      this.RedoQuickGameMenuButs();
+      break;
+    case(3):
+      this.RedoCupMenuButs();
       break;
     case (5):
       this.RedoMyTeamsMenuButs();
       break;
-    case (2):
-      this.RedoQuickGameMenuButs();
+    case (6):
+      this.RedoEditMenuButs();
       break;
     case (7):
       this.RedoGameFinishedMenuButs();
