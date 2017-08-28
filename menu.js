@@ -583,7 +583,7 @@ class selectMenu
     this.selectedPage = 0;
     this.toChooseFromPage = 0;
 
-    this.teamsShownPerPage = 5;
+    this.teamsShownPerPage = 6;
 
     for (var i = 0; i < allTeams.length; i++)
     {
@@ -593,7 +593,7 @@ class selectMenu
 
   IncreaseSelectedPage()
   {
-    var max = math.floor(this.currentlySelected.length / this.teamsShownPerPage);
+    var max = Math.floor(this.currentlySelected.length / this.teamsShownPerPage);
     if (this.selectedPage < max)
     {
       this.selectedPage++;
@@ -606,7 +606,7 @@ class selectMenu
 
   DecreaseSelectedPage()
   {
-    var max = math.floor(this.toChooseFrom.length / this.teamsShownPerPage);
+    var max = Math.floor(this.toChooseFrom.length / this.teamsShownPerPage);
     if (this.selectedPage > 0)
     {
       this.selectedPage--;
@@ -619,7 +619,7 @@ class selectMenu
 
   IncreaseToChooseFromPage()
   {
-    var max = math.floor(this.toChooseFrom.length / this.teamsShownPerPage);
+    var max = Math.floor(this.toChooseFrom.length / this.teamsShownPerPage);
     if (this.toChooseFromPage < max)
     {
       this.toChooseFromPage++;
@@ -632,14 +632,14 @@ class selectMenu
 
   DecreaseToChooseFromPage()
   {
-    var max = math.floor(this.toChooseFrom.length / this.teamsShownPerPage);
+    var max = Math.floor(this.toChooseFrom.length / this.teamsShownPerPage);
     if (this.toChooseFromPage > 0)
     {
       this.toChooseFromPage--;
     }
     else
     {
-      this.selectedIndex = max;
+      this.toChooseFromPage = max;
     }
   }
 
@@ -667,9 +667,30 @@ class selectMenu
     }
   }
 
+  //this moves the team from the toChooseFrom to the Selected List
+  Select(index)
+  {
+    if (index + this.toChooseFromPage * this.teamsShownPerPage < this.toChooseFrom.length)
+    {
+      console.log("before: ", this.toChooseFrom, this.selected);
+      this.selected.push(this.toChooseFrom.splice(index + this.toChooseFromPage * this.teamsShownPerPage, 1));
+      console.log("after: ", this.toChooseFrom, this.selected);
+    }
+  }
+
   Reset()
   {
-    this.constructor();
+    this.selected = [];
+    this.toChooseFrom = [];
+    this.selectedPage = 0;
+    this.toChooseFromPage = 0;
+
+    this.teamsShownPerPage = 6;
+
+    for (var i = 0; i < allTeams.length; i++)
+    {
+      this.toChooseFrom.push(i);
+    }
   }
 }
 
@@ -725,7 +746,6 @@ class Menu
   constructor()
   {
     AdjustCanvasSize();
-    this.LoadAllTeams();
     this.currentState = 1; //0 is in a game, quickMatchMenu is 2, the Cup Menu is 3, My Teams is 5, Team edit is 6, the match finished screen is 7
     this.menuStart = can.width / 3;
     this.menuWidth = this.menuStart;
@@ -735,7 +755,7 @@ class Menu
     this.debugMode = true;
 
     this.cup = new Cup();
-    this.selectedMenu = new selectMenu();
+    this.selMen = new selectMenu();
 
     this.aTeam = 0;
     this.hTeam = 1;
@@ -743,6 +763,8 @@ class Menu
     this.isSafed = true;
     can.addEventListener("click", this.OnClick.bind(this), false);
     window.addEventListener("keypress", this.KeyStroke.bind(this), false);
+
+    this.LoadAllTeams();
 
     this.mainMenuButs = {};
     this.mainMenuButs.QuickMatch = new CanvasButton(this.menuStart, this.eigthHeight, this.menuWidth, this.eigthHeight * 0.75, "Quick Match");
@@ -777,8 +799,11 @@ class Menu
     this.gameFinishedMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
     this.cupMenuButs = {};
+    this.cupMenuButs.TCFUp = new CanvasButton(this.menuStart / 4, this.eigthHeight * 1.25, this.menuWidth, this.eigthHeight / 2, "Up");
+    this.cupMenuButs.TCFDown = new CanvasButton(this.menuStart / 4, this.eigthHeight * 5.25, this.menuWidth, this.eigthHeight / 2, "Down");
+    this.cupMenuButs.SelUp = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * 1.25, this.menuWidth, this.eigthHeight / 2, "Up");
+    this.cupMenuButs.SelDown = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * 5.25, this.menuWidth, this.eigthHeight / 2, "Down");
     this.cupMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
-
 
     this.g = new Game();
     this.Resize();
@@ -793,7 +818,7 @@ class Menu
       allTeams[i].UpdateString();
       localStorage["team" + i] = allTeams[i].safeString;
     }
-    this.selectedMenu.Reset();
+    this.selMen.Reset();
   }
 
   LoadAllTeams()
@@ -811,7 +836,7 @@ class Menu
     {
       allTeams.push(new Team(localStorage["team" + i]));
     }
-    this.selectedMenu.Reset();
+    this.selMen.Reset();
   }
 
   RedoMyTeamsMenuButs()
@@ -926,26 +951,27 @@ class Menu
   RedoCupMenuButs()
   {
     var textBuf = undefined;
-    for (var selectedIndex = 0; selectedIndex < this.selectedMenu.teamsShownPerPage; selectedIndex++)
+    for (var selectedIndex = 0; selectedIndex < this.selMen.teamsShownPerPage; selectedIndex++)
     {
-      if (allTeams[this.selectedMenu.GetSelected(selectedIndex)] == undefined)
+      if (allTeams[this.selMen.GetSelected(selectedIndex)] == undefined)
       {
-        break;
+        delete this.cupMenuButs["sel" + selectedIndex];
+        continue;
       }
-      textBuf = allTeams[this.selectedMenu.GetSelected(selectedIndex)].name;
-      this.cupMenuButs["sel" + toChooseFromIndex] = new CanvasButton(this.menuStart / 0.25, this.eigthHeight * (2 + toChooseFromIndex), this.menuWidth, this.eigthHeight, textBuf, (2.5 / 100) * can.width + "px Arial");
+      textBuf = allTeams[this.selMen.GetSelected(selectedIndex)].name;
+      this.cupMenuButs["sel" + selectedIndex] = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * (2 + selectedIndex / 2), this.menuWidth, this.eigthHeight / 2, textBuf, (2.5 / 100) * can.width + "px Arial");
     }
 
-    for (var toChooseFromIndex = 0; toChooseFromIndex < this.selectedMenu.teamsShownPerPage; toChooseFromIndex++)
+    for (var toChooseFromIndex = 0; toChooseFromIndex < this.selMen.teamsShownPerPage; toChooseFromIndex++)
     {
-      console.log(this.selectedMenu.GetToChooseFrom(toChooseFromIndex));
-      if (allTeams[this.selectedMenu.GetToChooseFrom(toChooseFromIndex)] == undefined)
+      if (allTeams[this.selMen.GetToChooseFrom(toChooseFromIndex)] == undefined)
       {
-        break;
+        delete this.cupMenuButs["TCF" + toChooseFromIndex];
+        continue;
       }
-      textBuf = allTeams[this.selectedMenu.GetToChooseFrom(toChooseFromIndex)].name;
+      textBuf = allTeams[this.selMen.GetToChooseFrom(toChooseFromIndex)].name;
       console.log(textBuf);
-      this.cupMenuButs["TCF" + toChooseFromIndex] = new CanvasButton(this.menuStart / 2.5, this.eigthHeight * (2 + toChooseFromIndex / 2), this.menuWidth, this.eigthHeight / 2, textBuf, (2.5 / 100) * can.width + "px Arial");
+      this.cupMenuButs["TCF" + toChooseFromIndex] = new CanvasButton(this.menuStart / 4, this.eigthHeight * (2 + toChooseFromIndex / 2), this.menuWidth, this.eigthHeight / 2, textBuf, (2.5 / 100) * can.width + "px Arial");
     }
   }
 
@@ -978,7 +1004,6 @@ class Menu
         {
           if (this.cupMenuButs.hasOwnProperty(key))
           {
-            console.log("drawing currently: " + key, this.cupMenuButs[key].text);
             this.cupMenuButs[key].Draw();
           }
         }
@@ -1073,10 +1098,25 @@ class Menu
         }
         for (var toChooseFromIndex = 0; toChooseFromIndex < 5; toChooseFromIndex++)
         {
-          if (this.cupMenuButs["TCF" + toChooseFromIndex].ClickedOn(event.x,event.y))
+          if (this.cupMenuButs.hasOwnProperty("TCF" + toChooseFromIndex))
           {
-            
+            if (this.cupMenuButs["TCF" + toChooseFromIndex].ClickedOn(event.x,event.y))
+            {
+              this.selMen.Select(toChooseFromIndex);
+              console.log("selecting: ", toChooseFromIndex);
+              this.ChangeCurrentState(3);
+            }
           }
+        }
+        if(this.cupMenuButs.TCFUp.ClickedOn(event.x,event.y))
+        {
+          this.selMen.IncreaseToChooseFromPage();
+          this.ChangeCurrentState(3);
+        }
+        if(this.cupMenuButs.TCFDown.ClickedOn(event.x,event.y))
+        {
+          this.selMen.DecreaseToChooseFromPage();
+          this.ChangeCurrentState(3);
         }
         break;
       case 5: //inside My Teams
