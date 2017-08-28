@@ -571,6 +571,32 @@ class Cup
   {
     this.teamlist = [];
     this.cupSize = 8; //huehuehuehuehe
+    this.pairings = []; //first round has 4 pairs, second 2 and last 1
+    this.results = []; //true means the first team won, false means the second did
+  }
+
+  Init()
+  {
+    var teamlistbuffer = [];
+    for (var i in this.teamlist)
+    {
+      teamlistbuffer.push(i);
+    }
+    var teamlistShuffeld = [];
+    for (var i = 0; i < this.cupSize; i++)
+    {
+      teamlistShuffeld.push(teamlistbuffer.splice(Math.floor(Math.random() * teamlistbuffer.length - 1), 1)[0]);
+    }
+
+    this.pairings.push([]);
+    for (var i = 0; i < this.cupSize; i += 2)
+    {
+      this.pairings[0].push([teamlistShuffeld[i], teamlistShuffeld[i + 1]]);
+    }
+
+    this.pairings.push([[],[]]); //2 pairings in the semi finals
+    this.pairings.push([]); //one final pairing
+    console.log(this.pairings);
   }
 }
 
@@ -583,7 +609,7 @@ class selectMenu
     this.selectedPage = 0;
     this.toChooseFromPage = 0;
 
-    this.teamsShownPerPage = 6;
+    this.teamsShownPerPage = 8;
 
     for (var i = 0; i < allTeams.length; i++)
     {
@@ -647,7 +673,7 @@ class selectMenu
   {
     if (index + this.toChooseFromPage * this.teamsShownPerPage < this.toChooseFrom.length)
     {
-      return index + this.toChooseFromPage * this.teamsShownPerPage;
+      return this.toChooseFrom[index + this.toChooseFromPage * this.teamsShownPerPage];
     }
     else
     {
@@ -659,7 +685,7 @@ class selectMenu
   {
     if (index + this.selectedPage * this.teamsShownPerPage < this.selected.length)
     {
-      return index + this.selectedPage * this.teamsShownPerPage;
+      return this.selected[index + this.selectedPage * this.teamsShownPerPage];
     }
     else
     {
@@ -670,11 +696,17 @@ class selectMenu
   //this moves the team from the toChooseFrom to the Selected List
   Select(index)
   {
-    if (index + this.toChooseFromPage * this.teamsShownPerPage < this.toChooseFrom.length)
+    if (index + this.toChooseFromPage * this.teamsShownPerPage < this.toChooseFrom.length && this.selected.length < 9)
     {
-      console.log("before: ", this.toChooseFrom, this.selected);
       this.selected.push(this.toChooseFrom.splice(index + this.toChooseFromPage * this.teamsShownPerPage, 1));
-      console.log("after: ", this.toChooseFrom, this.selected);
+    }
+  }
+
+  Deselect(index)
+  {
+    if (index + this.selectedPage * this.teamsShownPerPage < this.selected.length)
+    {
+      this.toChooseFrom.push(this.selected.splice(index + this.selectedPage * this.teamsShownPerPage, 1));
     }
   }
 
@@ -685,7 +717,7 @@ class selectMenu
     this.selectedPage = 0;
     this.toChooseFromPage = 0;
 
-    this.teamsShownPerPage = 6;
+    this.teamsShownPerPage = 8;
 
     for (var i = 0; i < allTeams.length; i++)
     {
@@ -799,10 +831,12 @@ class Menu
     this.gameFinishedMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
     this.cupMenuButs = {};
-    this.cupMenuButs.TCFUp = new CanvasButton(this.menuStart / 4, this.eigthHeight * 1.25, this.menuWidth, this.eigthHeight / 2, "Up");
-    this.cupMenuButs.TCFDown = new CanvasButton(this.menuStart / 4, this.eigthHeight * 5.25, this.menuWidth, this.eigthHeight / 2, "Down");
-    this.cupMenuButs.SelUp = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * 1.25, this.menuWidth, this.eigthHeight / 2, "Up");
-    this.cupMenuButs.SelDown = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * 5.25, this.menuWidth, this.eigthHeight / 2, "Down");
+    this.cupMenuButs.TCFUp = new CanvasButton(this.menuStart / 4, this.eigthHeight * 0.75, this.menuWidth, this.eigthHeight / 2, "Up");
+    this.cupMenuButs.TCFDown = new CanvasButton(this.menuStart / 4, this.eigthHeight * 5.75, this.menuWidth, this.eigthHeight / 2, "Down");
+    //this.cupMenuButs.SelUp = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * 0.75, this.menuWidth, this.eigthHeight / 2, "Up");
+    this.cupMenuButs.SelectedTitle = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * 0.75, this.menuWidth, this.eigthHeight / 2, "Currently Playing:", undefined, undefined, false);
+    //this.cupMenuButs.SelDown = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * 5.75, this.menuWidth, this.eigthHeight / 2, "Down");
+    this.cupMenuButs.Start = new CanvasButton(this.menuStart , this.eigthHeight * 6.5, this.menuWidth, this.eigthHeight * 0.5, "Start");
     this.cupMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
     this.g = new Game();
@@ -843,7 +877,7 @@ class Menu
   {
     if(allTeams.length)
     {
-      this.myTeamsMenuButs.Name = new CanvasButton(this.menuStart, this.eigthHeight * 2, this.menuWidth, this.eigthHeight * 0.5, allTeams[this.selectedTeam].name, (2.5 / 100) * can.width + "px Arial");
+      this.myTeamsMenuButs.Name = new CanvasButton(this.menuStart * 0.75, this.eigthHeight * 2, this.menuWidth * 1.5, this.eigthHeight * 0.5, allTeams[this.selectedTeam].name, (2.5 / 100) * can.width + "px Arial");
       this.myTeamsMenuButs.ShortName = new CanvasButton(this.menuStart, this.eigthHeight * 2.5, this.menuWidth, this.eigthHeight * 0.5, allTeams[this.selectedTeam].shortName, (2.5 / 100) * can.width + "px Arial");
 
 
@@ -871,7 +905,7 @@ class Menu
   {
     try
     {
-      this.editTeamsMenuButs.Name = new CanvasButton(this.menuStart, this.eigthHeight, this.menuWidth, this.eigthHeight * 0.5, allTeams[this.selectedTeam].name, (2.5 / 100) * can.width + "px Arial");
+      this.editTeamsMenuButs.Name = new CanvasButton(this.menuStart * 0.75, this.eigthHeight, this.menuWidth * 1.5, this.eigthHeight * 0.5, allTeams[this.selectedTeam].name, (2.5 / 100) * can.width + "px Arial");
       this.editTeamsMenuButs.ShortName = new CanvasButton(this.menuStart, this.eigthHeight * 1.5, this.menuWidth, this.eigthHeight * 0.5, allTeams[this.selectedTeam].shortName, (2.5 / 100) * can.width + "px Arial");
       for (var x = 1; x <= 4; x++)
       {
@@ -959,7 +993,7 @@ class Menu
         continue;
       }
       textBuf = allTeams[this.selMen.GetSelected(selectedIndex)].name;
-      this.cupMenuButs["sel" + selectedIndex] = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * (2 + selectedIndex / 2), this.menuWidth, this.eigthHeight / 2, textBuf, (2.5 / 100) * can.width + "px Arial");
+      this.cupMenuButs["sel" + selectedIndex] = new CanvasButton(this.menuStart * 1.75, this.eigthHeight * (1.5 + selectedIndex / 2), this.menuWidth, this.eigthHeight / 2, textBuf, (2.5 / 100) * can.width + "px Arial");
     }
 
     for (var toChooseFromIndex = 0; toChooseFromIndex < this.selMen.teamsShownPerPage; toChooseFromIndex++)
@@ -970,8 +1004,7 @@ class Menu
         continue;
       }
       textBuf = allTeams[this.selMen.GetToChooseFrom(toChooseFromIndex)].name;
-      console.log(textBuf);
-      this.cupMenuButs["TCF" + toChooseFromIndex] = new CanvasButton(this.menuStart / 4, this.eigthHeight * (2 + toChooseFromIndex / 2), this.menuWidth, this.eigthHeight / 2, textBuf, (2.5 / 100) * can.width + "px Arial");
+      this.cupMenuButs["TCF" + toChooseFromIndex] = new CanvasButton(this.menuStart / 4, this.eigthHeight * (1.5 + toChooseFromIndex / 2), this.menuWidth, this.eigthHeight / 2, textBuf, (2.5 / 100) * can.width + "px Arial", "#e30000");
     }
   }
 
@@ -1094,16 +1127,27 @@ class Menu
       case 3: //First Cup Menu
         if (this.cupMenuButs.Back.ClickedOn(event.x,event.y))
         {
+          this.selMen.Reset();
           this.ChangeCurrentState(1);
         }
-        for (var toChooseFromIndex = 0; toChooseFromIndex < 5; toChooseFromIndex++)
+        for (var toChooseFromIndex = 0; toChooseFromIndex < this.selMen.teamsShownPerPage; toChooseFromIndex++)
         {
           if (this.cupMenuButs.hasOwnProperty("TCF" + toChooseFromIndex))
           {
             if (this.cupMenuButs["TCF" + toChooseFromIndex].ClickedOn(event.x,event.y))
             {
               this.selMen.Select(toChooseFromIndex);
-              console.log("selecting: ", toChooseFromIndex);
+              this.ChangeCurrentState(3);
+            }
+          }
+        }
+        for (var selectIndex = 0; selectIndex < this.selMen.teamsShownPerPage; selectIndex++)
+        {
+          if (this.cupMenuButs.hasOwnProperty("sel" + selectIndex))
+          {
+            if (this.cupMenuButs["sel" + selectIndex].ClickedOn(event.x,event.y))
+            {
+              this.selMen.Deselect(selectIndex);
               this.ChangeCurrentState(3);
             }
           }
@@ -1117,6 +1161,16 @@ class Menu
         {
           this.selMen.DecreaseToChooseFromPage();
           this.ChangeCurrentState(3);
+        }
+        if (this.cupMenuButs.Start.ClickedOn(event.x, event.y))
+        {
+          this.cup.teamlist = [];
+          for (var i in this.selMen.selected)
+          {
+            this.cup.teamlist.push(i);
+          }
+          this.cup.Init();
+          this.ChangeCurrentState(4);
         }
         break;
       case 5: //inside My Teams
