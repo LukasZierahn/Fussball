@@ -572,7 +572,8 @@ class Cup
     this.teamlist = [];
     this.cupSize = 8; //huehuehuehuehe
     this.pairings = []; //first round has 4 pairs, second 2 and last 1
-    this.results = []; //true means the first team won, false means the second did
+    this.results = []; //1 means the first team won, 2 means the second did, 0 means no result yet
+    this.initialized = false;
   }
 
   Init()
@@ -589,13 +590,17 @@ class Cup
     }
 
     this.pairings.push([]);
+    this.results.push([])
     for (var i = 0; i < this.cupSize; i += 2)
     {
+      this.teamlist[i] = teamlistShuffeld[i];
+      this.teamlist[i + 1] = teamlistShuffeld[i + 1];
       this.pairings[0].push([teamlistShuffeld[i], teamlistShuffeld[i + 1]]);
     }
 
     this.pairings.push([[],[]]); //2 pairings in the semi finals
     this.pairings.push([]); //one final pairing
+    this.initialized = true;
     console.log(this.pairings);
   }
 }
@@ -839,6 +844,11 @@ class Menu
     this.cupMenuButs.Start = new CanvasButton(this.menuStart , this.eigthHeight * 6.5, this.menuWidth, this.eigthHeight * 0.5, "Start");
     this.cupMenuButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
 
+    this.cupButs = {};
+    this.cupButs.NextGame = new CanvasButton(this.menuStart , this.eigthHeight * 6.5, this.menuWidth, this.eigthHeight * 0.5, "Next Game", (2.5 / 100) * can.width + "px Arial");
+    this.cupButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
+    this.cupButs.New = new CanvasButton(this.menuStart * 2.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "New Cup", (2.5 / 100) * can.width + "px Arial");
+
     this.g = new Game();
     this.Resize();
   }
@@ -1008,10 +1018,37 @@ class Menu
     }
   }
 
+  RedoCupButs()
+  {
+    var space = 0;
+    for (var i = 0; i < this.cup.cupSize; i++)
+    {
+      console.log("test");
+
+      if (i % 2 == 0)
+      {
+        space += 0.5;
+      }
+
+      var textBuf = "";
+      if (this.cup.teamlist[i] != undefined)
+      {
+        textBuf = allTeams[this.cup.teamlist[i]].name;
+      }
+
+      this.cupButs["CupBut" + i] = new CanvasButton(this.menuStart * 0.25, this.eigthHeight * (i / 2 + space), this.menuWidth * 0.75, this.eigthHeight / 2, textBuf, (2 / 100) * can.width + "px Arial");
+    }
+  }
+
   DrawMenu()
   {
     canCTX.clearRect(0, 0, can.width, can.height);
 
+    //yes yes this is really hacky and it would be way better to just make an array with all buttons
+    //and iterate through the index of the current state
+    //Past me didnt do it and current me is too lazy to fix it since i am close to being done with the project anyway
+    //so i guess its a future me problem if i look at this ever again that is
+    //hi future me by the way, i love you too ;)
     switch (this.currentState)
     {
       case 1:
@@ -1038,6 +1075,15 @@ class Menu
           if (this.cupMenuButs.hasOwnProperty(key))
           {
             this.cupMenuButs[key].Draw();
+          }
+        }
+        break;
+      case 4:
+        for (var key in this.cupButs)
+        {
+          if (this.cupButs.hasOwnProperty(key))
+          {
+            this.cupButs[key].Draw();
           }
         }
         break;
@@ -1090,7 +1136,14 @@ class Menu
         }
         else if (this.mainMenuButs.Cup.ClickedOn(event.x, event.y))
         {
-          this.ChangeCurrentState(3);
+          if (this.cup.initialized)
+          {
+            this.ChangeCurrentState(4);
+          }
+          else
+          {
+            this.ChangeCurrentState(3);
+          }
         }
 
         break;
@@ -1173,6 +1226,17 @@ class Menu
           this.ChangeCurrentState(4);
         }
         break;
+      case 4:
+        if (this.cupButs.Back.ClickedOn(event.x,event.y))
+        {
+          this.ChangeCurrentState(1);
+        }
+        if (this.cupButs.New.ClickedOn(event.x,event.y))
+        {
+          this.cup.initialized = false;
+          this.ChangeCurrentState(3);
+        }
+      break;
       case 5: //inside My Teams
         if (this.myTeamsMenuButs.EditTeam.ClickedOn(event.x, event.y))
         {
@@ -1337,8 +1401,11 @@ class Menu
     case (2):
       this.RedoQuickGameMenuButs();
       break;
-    case(3):
+    case (3):
       this.RedoCupMenuButs();
+      break;
+    case (4):
+      this.RedoCupButs();
       break;
     case (5):
       this.RedoMyTeamsMenuButs();
