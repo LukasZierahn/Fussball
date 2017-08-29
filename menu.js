@@ -696,7 +696,7 @@ class selectMenu
   //this moves the team from the toChooseFrom to the Selected List
   Select(index)
   {
-    if (index + this.toChooseFromPage * this.teamsShownPerPage < this.toChooseFrom.length && this.selected.length < 9)
+    if (index + this.toChooseFromPage * this.teamsShownPerPage < this.toChooseFrom.length && this.selected.length < 8)
     {
       this.selected.push(this.toChooseFrom.splice(index + this.toChooseFromPage * this.teamsShownPerPage, 1));
     }
