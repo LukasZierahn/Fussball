@@ -574,6 +574,7 @@ class Cup
     this.pairings = []; //first round has 4 pairs, second 2 and last 1
     this.results = []; //1 means the first team won, 2 means the second did, 0 means no result yet
     this.initialized = false;
+    this.currentGame = 0;
   }
 
   Init()
@@ -602,6 +603,32 @@ class Cup
     this.pairings.push([]); //one final pairing
     this.initialized = true;
     console.log(this.pairings);
+  }
+
+  NextGame()
+  {
+    if (this.currentGame < 4) //first pairings are getting played
+    {
+      men.hTeam = this.pairings[0][this.currentGame][0];
+      men.aTeam = this.pairings[0][this.currentGame][1];
+      men.StartGame();
+    }
+  }
+
+  EndOfGame()
+  {
+    if (this.currentGame < 4)
+    {
+      if (men.g.result)
+      {
+        this.pairings[Math.floor(this.currentGame / 2)][this.currentGame % 2] = this.pairings[0][this.currentGame][0];
+      }
+      else
+      {
+        this.pairings[Math.floor(this.currentGame / 2)][this.currentGame % 2] = this.pairings[0][this.currentGame][1];
+      }
+    }
+    this.currentGame++;
   }
 }
 
@@ -790,6 +817,7 @@ class Menu
     this.selectedTeam = 0;
     this.autoplay = false;
     this.debugMode = true;
+    this.inCup = false;
 
     this.cup = new Cup();
     this.selMen = new selectMenu();
@@ -1020,11 +1048,10 @@ class Menu
 
   RedoCupButs()
   {
+    //making the first buttons
     var space = 0;
     for (var i = 0; i < this.cup.cupSize; i++)
     {
-      console.log("test");
-
       if (i % 2 == 0)
       {
         space += 0.5;
@@ -1036,8 +1063,27 @@ class Menu
         textBuf = allTeams[this.cup.teamlist[i]].name;
       }
 
-      this.cupButs["CupBut" + i] = new CanvasButton(this.menuStart * 0.25, this.eigthHeight * (i / 2 + space), this.menuWidth * 0.75, this.eigthHeight / 2, textBuf, (2 / 100) * can.width + "px Arial");
+      this.cupButs["CupBut" + i] = new CanvasButton(this.menuStart * 0.125, this.eigthHeight * (i / 2 + space), this.menuWidth * 0.75, this.eigthHeight / 2, textBuf, (2 / 100) * can.width + "px Arial");
     }
+
+    space = -0.75;
+    for (var i = 0; i < this.cup.cupSize / 2; i++)
+    {
+      if (i % 2 == 0)
+      {
+        space += 2;
+      }
+
+      var textBuf = "";
+      if (this.cup.pairings[1][Math.floor(i / 2)][i % 2] !== undefined)
+      {
+        textBuf = allTeams[this.cup.pairings[1][Math.floor(i / 2)][i % 2]].name;
+      }
+
+      this.cupButs["CupBut Semi" + i] = new CanvasButton(this.menuStart * 1.125, this.eigthHeight * (i / 2 + space), this.menuWidth * 0.75, this.eigthHeight / 2, textBuf, (2 / 100) * can.width + "px Arial");
+    }
+    this.cupButs["CupBut Finals0"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 2.75, this.menuWidth * 0.75, this.eigthHeight / 2, "textBuf", (2 / 100) * can.width + "px Arial");
+    this.cupButs["CupBut Finals1"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 3.25, this.menuWidth * 0.75, this.eigthHeight / 2, "textBuf", (2 / 100) * can.width + "px Arial");
   }
 
   DrawMenu()
@@ -1086,6 +1132,28 @@ class Menu
             this.cupButs[key].Draw();
           }
         }
+        canCTX.beginPath();
+        //connecting the first 4 pairs to the semi finals
+        for (var i = 0; i < 2; i++)
+        {
+          canCTX.moveTo(this.menuStart * 0.875, this.eigthHeight * (1 + i * 3));
+          canCTX.lineTo(this.menuStart, this.eigthHeight * (1 + i * 3));
+          canCTX.lineTo(this.menuStart, this.eigthHeight * (2.5 + i * 3));
+          canCTX.lineTo(this.menuStart * 0.875, this.eigthHeight * (2.5 + i * 3));
+
+          canCTX.moveTo(this.menuStart, this.eigthHeight * (1.75 + i * 3));
+          canCTX.lineTo(this.menuStart * 1.125, this.eigthHeight * (1.75 + i * 3));
+        }
+
+        canCTX.moveTo(this.menuStart * 1.875, this.eigthHeight * 1.75);
+        canCTX.lineTo(this.menuStart * 2, this.eigthHeight * 1.75);
+        canCTX.lineTo(this.menuStart * 2, this.eigthHeight * 4.75);
+        canCTX.lineTo(this.menuStart * 1.875, this.eigthHeight * 4.75);
+
+        canCTX.moveTo(this.menuStart * 2, this.eigthHeight * 3.25);
+        canCTX.lineTo(this.menuStart * 2.125, this.eigthHeight * 3.25);
+
+        canCTX.stroke();
         break;
       case 5:
         for (var key in this.myTeamsMenuButs)
@@ -1235,6 +1303,10 @@ class Menu
         {
           this.cup.initialized = false;
           this.ChangeCurrentState(3);
+        }
+        if (this.cupButs.NextGame.ClickedOn(event.x,event.y))
+        {
+          this.cup.NextGame();
         }
       break;
       case 5: //inside My Teams
@@ -1400,12 +1472,14 @@ class Menu
     {
     case (2):
       this.RedoQuickGameMenuButs();
+      this.inCup = false;
       break;
     case (3):
       this.RedoCupMenuButs();
       break;
     case (4):
       this.RedoCupButs();
+      this.inCup = true;
       break;
     case (5):
       this.RedoMyTeamsMenuButs();
@@ -1426,6 +1500,7 @@ class Menu
     this.g.hTeam = allTeams[this.hTeam];
     this.g.aTeam = allTeams[this.aTeam];
     this.g.ResetGame();
+    this.g.forceResult = this.inCup;
     this.g.Render();
     if (this.autoplay)
     {
@@ -1435,7 +1510,15 @@ class Menu
 
   EndOfGame()
   {
-    this.ChangeCurrentState(7);
+    if (this.inCup)
+    {
+      this.cup.EndOfGame();
+      this.ChangeCurrentState(4);
+    }
+    else
+    {
+      this.ChangeCurrentState(7);
+    }
     diceHistory = [];
   }
 
