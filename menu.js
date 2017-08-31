@@ -170,7 +170,6 @@ class Football
         else if(this.CheckCollumForPlays(1) && dice != 4)
         {
           score[1].push(this.game.minute);
-          console.log("away scored", score)
           this.pathx.push(0);
           this.pathy.push(fieldMiddle / can.height);
           this.startingSide = !this.startingSide
@@ -189,7 +188,6 @@ class Football
         else if(this.CheckCollumForPlays(6) && dice != 4)
         {
           score[0].push(this.game.minute);
-          console.log("home scored", score)
           this.pathx.push(1);
           this.pathy.push(fieldMiddle / can.height);
           this.startingSide = !this.startingSide
@@ -275,8 +273,9 @@ class Game
     this.ball = new Football(this);
     this.ball.PutOnKickOff();
     this.minute = 1;
-    this.result = undefined;
+    this.result = undefined; //if this is true then the home team has won
     this.forceResult = forceResult;
+    this.isDrawing = true;
 
     this.hTeam = new Team("", true);
     this.aTeam = new Team("", false);
@@ -293,6 +292,19 @@ class Game
     this.ball.pathy = [];
     this.ball.PutOnKickOff();
     score = [[],[]];
+
+    if (this.hTeam == undefined)
+    {
+      this.result = false;
+      men.EndOfGame();
+      return;
+    }
+    if (this.aTeam == undefined)
+    {
+      this.result = true;
+      men.EndOfGame();
+    }
+
     this.UpdatePlayers();
   }
 
@@ -327,6 +339,8 @@ class Game
       if (!this.forceResult || score[0] != score[1])
       {
         clearInterval(turnInterval);
+        this.result = score[0] > score [1];
+        console.log("res", this.result);
         men.EndOfGame();
         return;
       }
@@ -352,6 +366,7 @@ class Game
     else if (turn == 123)
     {
       clearInterval(turnInterval);
+      this.result = score[0] > score [1];
       men.EndOfGame();
       return;
     }
@@ -362,7 +377,10 @@ class Game
 
 
     this.ball.Turn(d);
-    this.Render();
+    if (this.isDrawing)
+    {
+      this.Render();
+    }
   }
 
 
@@ -572,13 +590,17 @@ class Cup
     this.teamlist = [];
     this.cupSize = 8; //huehuehuehuehe
     this.pairings = []; //first round has 4 pairs, second 2 and last 1
-    this.results = []; //1 means the first team won, 2 means the second did, 0 means no result yet
     this.initialized = false;
     this.currentGame = 0;
+    this.winner = undefined;
   }
 
   Init()
   {
+    this.pairings = []; //first round has 4 pairs, second 2 and last 1
+    this.currentGame = 0;
+    this.winner = undefined;
+
     var teamlistbuffer = [];
     for (var i in this.teamlist)
     {
@@ -591,7 +613,6 @@ class Cup
     }
 
     this.pairings.push([]);
-    this.results.push([])
     for (var i = 0; i < this.cupSize; i += 2)
     {
       this.teamlist[i] = teamlistShuffeld[i];
@@ -611,7 +632,65 @@ class Cup
     {
       men.hTeam = this.pairings[0][this.currentGame][0];
       men.aTeam = this.pairings[0][this.currentGame][1];
-      men.StartGame();
+
+      if (men.hTeam == undefined)
+      {
+        this.pairings[1][Math.floor(this.currentGame / 2)][this.currentGame % 2] = men.aTeam;
+      }
+      else if (men.aTeam == undefined)
+      {
+        this.pairings[1][Math.floor(this.currentGame / 2)][this.currentGame % 2] = men.hTeam;
+      }
+      else
+      {
+        men.StartGame();
+        return;
+      }
+
+      men.ChangeCurrentState(4);
+      this.currentGame++;
+      this.NextGame();
+    }
+    else if (this.currentGame < 6)
+    {
+      this.hTeam = this.pairings[1][this.currentGame - 4][0];
+      this.aTeam = this.pairings[1][this.currentGame - 4][1];
+
+      if (men.hTeam == undefined)
+      {
+        this.pairings[2][this.currentGame - 4] = men.aTeam;
+      }
+      else if (men.aTeam == undefined)
+      {
+        this.pairings[2][this.currentGame - 4] = men.hTeam;
+      }
+      else
+      {
+        men.StartGame();
+        return;
+      }
+
+      men.ChangeCurrentState(4);
+      this.currentGame++;
+      this.NextGame();
+    }
+    else if (this.currentGame < 7)
+    {
+      this.hTeam = this.pairings[2][0];
+      this.aTeam = this.pairings[2][1];
+
+      if (men.hTeam == undefined)
+      {
+        this.winner = men.aTeam;
+      }
+      else if (men.aTeam == undefined)
+      {
+        this.winner = men.hTeam;
+      }
+      else
+      {
+        men.StartGame();
+      }
     }
   }
 
@@ -621,11 +700,11 @@ class Cup
     {
       if (men.g.result)
       {
-        this.pairings[Math.floor(this.currentGame / 2)][this.currentGame % 2] = this.pairings[0][this.currentGame][0];
+        this.pairings[1][Math.floor(this.currentGame / 2)][this.currentGame % 2] = this.pairings[0][this.currentGame][0];
       }
       else
       {
-        this.pairings[Math.floor(this.currentGame / 2)][this.currentGame % 2] = this.pairings[0][this.currentGame][1];
+        this.pairings[1][Math.floor(this.currentGame / 2)][this.currentGame % 2] = this.pairings[0][this.currentGame][1];
       }
     }
     this.currentGame++;
@@ -1082,8 +1161,23 @@ class Menu
 
       this.cupButs["CupBut Semi" + i] = new CanvasButton(this.menuStart * 1.125, this.eigthHeight * (i / 2 + space), this.menuWidth * 0.75, this.eigthHeight / 2, textBuf, (2 / 100) * can.width + "px Arial");
     }
-    this.cupButs["CupBut Finals0"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 2.75, this.menuWidth * 0.75, this.eigthHeight / 2, "textBuf", (2 / 100) * can.width + "px Arial");
-    this.cupButs["CupBut Finals1"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 3.25, this.menuWidth * 0.75, this.eigthHeight / 2, "textBuf", (2 / 100) * can.width + "px Arial");
+    if (this.cup.pairings[2][0] != undefined)
+    {
+      this.cupButs["CupBut Finals0"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 2.75, this.menuWidth * 0.75, this.eigthHeight / 2, allTeams[this.cup.pairings[2][0]].name, (2 / 100) * can.width + "px Arial");
+    }
+    else
+    {
+      this.cupButs["CupBut Finals0"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 2.75, this.menuWidth * 0.75, this.eigthHeight / 2, "", (2 / 100) * can.width + "px Arial");
+    }
+
+    if (this.cup.pairings[2][1] != undefined)
+    {
+      this.cupButs["CupBut Finals1"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 3.25, this.menuWidth * 0.75, this.eigthHeight / 2, allTeams[this.cup.pairings[2][1]].name, (2 / 100) * can.width + "px Arial");
+    }
+    else
+    {
+      this.cupButs["CupBut Finals1"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 3.25, this.menuWidth * 0.75, this.eigthHeight / 2, "", (2 / 100) * can.width + "px Arial");
+    }
   }
 
   DrawMenu()
@@ -1403,10 +1497,18 @@ class Menu
           }
         }
         break;
-      case 7:
+      case 7: //after a game
         if (this.gameFinishedMenuButs.Back.ClickedOn(event.x, event.y))
         {
-          this.ChangeCurrentState(1)
+          if (this.inCup)
+          {
+            this.cup.EndOfGame();
+            this.ChangeCurrentState(4)
+          }
+          else
+          {
+            this.ChangeCurrentState(1)
+          }
         }
         break;
     }
@@ -1510,15 +1612,7 @@ class Menu
 
   EndOfGame()
   {
-    if (this.inCup)
-    {
-      this.cup.EndOfGame();
-      this.ChangeCurrentState(4);
-    }
-    else
-    {
-      this.ChangeCurrentState(7);
-    }
+    this.ChangeCurrentState(7);
     diceHistory = [];
   }
 
