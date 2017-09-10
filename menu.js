@@ -4,7 +4,7 @@ var players = [];
 var menuSize = 200;
 var fieldHeight = can.height - menuSize;
 var fieldMiddle = fieldHeight / 2 + menuSize
-var keeperPadding = 150;
+var keeperPadding = 100;
 var dice = 1;
 var diceHistory = [];
 var turn = 0;
@@ -340,7 +340,6 @@ class Game
       {
         clearInterval(turnInterval);
         this.result = score[0] > score [1];
-        console.log("res", this.result);
         men.EndOfGame();
         return;
       }
@@ -414,8 +413,62 @@ class Game
       canCTX.fillText((45 * (1 + half)) + " + " + (this.minute - 45 * (1 + half)) , can.width / 4,50);
     }
 
+    //the field
+    canCTX.beginPath();
+    canCTX.rect(0, menuSize, can.width, can.height);
+    canCTX.fillStyle = "#00b33c";
+    canCTX.fill();
+
+    var lineWidth = can.width / 10 - can.width / 11;
+    var halfLineWidth = lineWidth / 2;
+
+    //the middle circle
+    canCTX.beginPath();
+    canCTX.lineWidth = lineWidth
+    canCTX.arc(can.width / 2, fieldMiddle, can.width / 10, 0, 2*Math.PI);
+    canCTX.fillStyle = "#595959";
+    canCTX.strokeStyle = "#595959";
+    canCTX.stroke();
+
+    //the two little 9 meter cirlce
+    canCTX.beginPath();
+    var littleCirlceDis = can.width * 0.08;
+    canCTX.arc(littleCirlceDis, fieldMiddle, halfLineWidth * 1.5, 0, 2*Math.PI);
+    canCTX.arc(can.width - littleCirlceDis, fieldMiddle, halfLineWidth * 1.5, 0, 2*Math.PI);
+    canCTX.fill();
+
+    //the field markings
+    canCTX.beginPath();
+    canCTX.moveTo(can.width / 2, menuSize);
+    canCTX.lineTo(can.width / 2, can.height - halfLineWidth);
+    canCTX.rect(halfLineWidth, menuSize + halfLineWidth, can.width - lineWidth, fieldHeight - lineWidth);
+
+    //penalty area
+    var penaltyAreaSize = (can.height / 100) * 18; //the penalty area is a rectangular which sides is a and 2a long where a is thsi variable
+    canCTX.rect(halfLineWidth, fieldMiddle - penaltyAreaSize, penaltyAreaSize, penaltyAreaSize * 2);
+    canCTX.rect(can.width - penaltyAreaSize, fieldMiddle - penaltyAreaSize, can.width - halfLineWidth, penaltyAreaSize * 2);
+
+    canCTX.rect(halfLineWidth, fieldMiddle - (penaltyAreaSize / 2.25), penaltyAreaSize / 3, penaltyAreaSize / 1.125);
+    canCTX.rect(can.width - penaltyAreaSize / 3, fieldMiddle - (penaltyAreaSize / 2.25), can.width - halfLineWidth, penaltyAreaSize / 1.125);
+    canCTX.stroke();
+
+    //the circles in the very front of the penalty area
+    canCTX.beginPath();
+    canCTX.arc(littleCirlceDis, fieldMiddle, can.width / 10, 1.67 * Math.PI, 0.34 * Math.PI);
+    canCTX.stroke();
+
+    canCTX.beginPath();
+    canCTX.arc(can.width - littleCirlceDis, fieldMiddle, can.width / 10, 1.34 * Math.PI, 0.642 * Math.PI, true);
+    canCTX.stroke();
+
+
+    canCTX.lineWidth = 2
+    canCTX.strokeSyle = "#000000";
+    canCTX.fillStyle = "#000000";
+
     //the score
     canCTX.font = (2.5 / 100) * can.width + "px Arial";
+    canCTX.fillStyle = "black";
     var scoreHomeIndex = 0, scoreAwayIndex = 0;
     canCTX.fillText(this.hTeam.shortName + " " + score[0].length + ":" + score[1].length + " " + this.aTeam.shortName, 3 * can.width / 4,50);
     for (var i = 1; i <= 5; i++)
@@ -623,7 +676,6 @@ class Cup
     this.pairings.push([[],[]]); //2 pairings in the semi finals
     this.pairings.push([]); //one final pairing
     this.initialized = true;
-    console.log(this.pairings);
   }
 
   NextGame()
@@ -651,18 +703,18 @@ class Cup
       this.currentGame++;
       this.NextGame();
     }
-    else if (this.currentGame < 6)
+    else if (this.currentGame < 6) //the semi finals
     {
-      this.hTeam = this.pairings[1][this.currentGame - 4][0];
-      this.aTeam = this.pairings[1][this.currentGame - 4][1];
+      men.hTeam = this.pairings[1][this.currentGame - 4][0];
+      men.aTeam = this.pairings[1][this.currentGame - 4][1];
 
       if (men.hTeam == undefined)
       {
-        this.pairings[2][this.currentGame - 4] = men.aTeam;
+        this.pairings[2].push(men.aTeam);
       }
       else if (men.aTeam == undefined)
       {
-        this.pairings[2][this.currentGame - 4] = men.hTeam;
+        this.pairings[2].push(men.hTeam);
       }
       else
       {
@@ -676,16 +728,18 @@ class Cup
     }
     else if (this.currentGame < 7)
     {
-      this.hTeam = this.pairings[2][0];
-      this.aTeam = this.pairings[2][1];
+      men.hTeam = this.pairings[2][0];
+      men.aTeam = this.pairings[2][1];
 
       if (men.hTeam == undefined)
       {
         this.winner = men.aTeam;
+        men.ChangeCurrentState(8);
       }
       else if (men.aTeam == undefined)
       {
         this.winner = men.hTeam;
+        men.ChangeCurrentState(8);
       }
       else
       {
@@ -707,7 +761,32 @@ class Cup
         this.pairings[1][Math.floor(this.currentGame / 2)][this.currentGame % 2] = this.pairings[0][this.currentGame][1];
       }
     }
+    else if (this.currentGame < 6)
+    {
+      if (men.g.result)
+      {
+        this.pairings[2].push(this.pairings[1][this.currentGame - 4][0]);
+      }
+      else
+      {
+        this.pairings[2].push(this.pairings[1][this.currentGame - 4][1]);
+      }
+    }
+    else if (this.currentGame == 6)
+    {
+      if (men.g.result)
+      {
+        this.winner = men.aTeam;
+      }
+      else
+      {
+        this.winner = men.hTeam;
+      }
+      men.ChangeCurrentState(8);
+      return;
+    }
     this.currentGame++;
+    men.ChangeCurrentState(4)
   }
 }
 
@@ -897,6 +976,7 @@ class Menu
     this.autoplay = false;
     this.debugMode = true;
     this.inCup = false;
+    this.simulateGame = false;
 
     this.cup = new Cup();
     this.selMen = new selectMenu();
@@ -911,11 +991,9 @@ class Menu
     this.LoadAllTeams();
 
     this.mainMenuButs = {};
-    this.mainMenuButs.QuickMatch = new CanvasButton(this.menuStart, this.eigthHeight, this.menuWidth, this.eigthHeight * 0.75, "Quick Match");
-    this.mainMenuButs.Cup = new CanvasButton(this.menuStart, this.eigthHeight * 2, this.menuWidth, this.eigthHeight * 0.75, "Cup");
-    this.mainMenuButs.Bundesliga = new CanvasButton(this.menuStart, this.eigthHeight * 3, this.menuWidth, this.eigthHeight * 0.75, "Bundesliga");
-    this.mainMenuButs.MyTeams = new CanvasButton(this.menuStart, this.eigthHeight * 4, this.menuWidth, this.eigthHeight * 0.75, "My Teams");
-    this.mainMenuButs.Options = new CanvasButton(this.menuStart, this.eigthHeight * 5, this.menuWidth, this.eigthHeight * 0.75, "Options");
+    this.mainMenuButs.QuickMatch = new CanvasButton(this.menuStart, this.eigthHeight * 1.5, this.menuWidth, this.eigthHeight * 0.75, "Quick Match");
+    this.mainMenuButs.Cup = new CanvasButton(this.menuStart, this.eigthHeight * 3, this.menuWidth, this.eigthHeight * 0.75, "Cup");
+    this.mainMenuButs.MyTeams = new CanvasButton(this.menuStart, this.eigthHeight * 4.5, this.menuWidth, this.eigthHeight * 0.75, "My Teams");
 
     this.quickMatchMenuButs = {};
     this.quickMatchMenuButs.Start = new CanvasButton(this.menuStart, this.eigthHeight * 6, this.menuWidth, this.eigthHeight, "Start");
@@ -955,6 +1033,10 @@ class Menu
     this.cupButs.NextGame = new CanvasButton(this.menuStart , this.eigthHeight * 6.5, this.menuWidth, this.eigthHeight * 0.5, "Next Game", (2.5 / 100) * can.width + "px Arial");
     this.cupButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Back", (2.5 / 100) * can.width + "px Arial");
     this.cupButs.New = new CanvasButton(this.menuStart * 2.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "New Cup", (2.5 / 100) * can.width + "px Arial");
+
+    this.cupEndButs = {};
+    this.cupEndButs.Back = new CanvasButton(this.menuStart * 1.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Done", (2.5 / 100) * can.width + "px Arial");
+
 
     this.g = new Game();
     this.Resize();
@@ -1074,6 +1156,8 @@ class Menu
   {
     this.gameFinishedMenuButs.Score = new CanvasButton(this.menuStart, this.eigthHeight * 2, this.menuStart, this.eigthHeight, allTeams[this.hTeam].shortName +  " " + score[0].length.toString() + " : " + score[1].length.toString() + " " + allTeams[this.aTeam].shortName, undefined, undefined, false);
 
+    //We are not doing this anymore
+    /*
     var scoreHomeIndex = 0, scoreAwayIndex = 0;
     for (var i = 1; i <= score[0].length + score[1].length; i++)
     {
@@ -1086,7 +1170,7 @@ class Menu
         this.gameFinishedMenuButs[i] = new CanvasButton(this.menuStart, this.eigthHeight * (3 + ((i - 1) / 3)), this.menuStart, this.eigthHeight / 3, "Minute " + score[0][scoreHomeIndex] + ":     " + (scoreHomeIndex + 1) + ":" + (scoreAwayIndex), (2.5 / 100) * can.width + "px Arial", undefined, false);
         scoreHomeIndex++;
       }
-      else if (((scoreAwayIndex - score[1].length - 1) && !(score[0].lenght - scoreHomeIndex -1)) || (score[0][scoreHomeIndex] > score[1][scoreAwayIndex]))
+      else if (((score[1].length - scoreAwayIndex - 1) && !(scoreHomeIndex - score[0].lenght - 1)) || (score[0][scoreHomeIndex] > score[1][scoreAwayIndex]))
       {
         this.gameFinishedMenuButs[i] = new CanvasButton(this.menuStart, this.eigthHeight * (3 + ((i - 1) / 3)), this.menuStart, this.eigthHeight / 3, "Minute " + score[1][scoreAwayIndex] + ":     " + (scoreHomeIndex) + ":" + (scoreAwayIndex + 1), (2.5 / 100) * can.width + "px Arial", undefined, false);
         scoreAwayIndex++;
@@ -1095,8 +1179,17 @@ class Menu
       {
         break;
       }
+    } */
 
-    }
+        for (var i = 0; i < score[0].length; i++)
+        {
+          this.gameFinishedMenuButs["score0, " + i] = new CanvasButton(this.menuStart / 2, this.eigthHeight * (3.5 + ((i - 1) / 3)), this.menuStart, this.eigthHeight / 3, "Minute " + score[0][i], (2.5 / 100) * can.width + "px Arial", undefined, false);
+        }
+
+        for (var i = 0; i < score[1].length; i++)
+        {
+          this.gameFinishedMenuButs["score1, " + i] = new CanvasButton(this.menuStart * 1.5, this.eigthHeight * (3.5 + ((i - 1) / 3)), this.menuStart, this.eigthHeight / 3, "Minute " + score[1][i], (2.5 / 100) * can.width + "px Arial", undefined, false);
+        }
   }
 
   RedoCupMenuButs()
@@ -1178,6 +1271,22 @@ class Menu
     {
       this.cupButs["CupBut Finals1"] = new CanvasButton(this.menuStart * 2.125, this.eigthHeight * 3.25, this.menuWidth * 0.75, this.eigthHeight / 2, "", (2 / 100) * can.width + "px Arial");
     }
+
+    var colour = "";
+    if (this.simulateGame)
+    {
+      colour = "#000000";
+    }
+    else
+    {
+      colour = "#e30000";
+    }
+    this.cupButs.Simulate = new CanvasButton(this.menuStart * 0.25, this.eigthHeight * 7, this.menuWidth / 2, this.eigthHeight * 0.5, "Simulate", (2.5 / 100) * can.width + "px Arial", colour);
+  }
+
+  RedoEndCupButs()
+  {
+    this.cupEndButs.wins = new CanvasButton(this.menuStart , this.eigthHeight * 3, this.menuWidth, this.eigthHeight * 0.5, allTeams[this.cup.winner].name + " has won the Cup!", (5 / 100) * can.width + "px Arial", undefined, false);
   }
 
   DrawMenu()
@@ -1268,13 +1377,22 @@ class Menu
         }
         break;
       case 7:
-      for (var key in this.gameFinishedMenuButs)
-      {
-        if (this.gameFinishedMenuButs.hasOwnProperty(key))
+        for (var key in this.gameFinishedMenuButs)
         {
-          this.gameFinishedMenuButs[key].Draw();
+          if (this.gameFinishedMenuButs.hasOwnProperty(key))
+          {
+            this.gameFinishedMenuButs[key].Draw();
+          }
         }
-      }
+      break;
+      case 8:
+        for (var key in this.cupEndButs)
+        {
+          if (this.cupEndButs.hasOwnProperty(key))
+          {
+            this.cupEndButs[key].Draw();
+          }
+        }
       break;
       default:
       break;
@@ -1402,7 +1520,12 @@ class Menu
         {
           this.cup.NextGame();
         }
-      break;
+        if(this.cupButs.Simulate.ClickedOn(event.x, event.y))
+        {
+          this.simulateGame = !this.simulateGame;
+          this.ChangeCurrentState(4);
+        }
+        break;
       case 5: //inside My Teams
         if (this.myTeamsMenuButs.EditTeam.ClickedOn(event.x, event.y))
         {
@@ -1503,7 +1626,6 @@ class Menu
           if (this.inCup)
           {
             this.cup.EndOfGame();
-            this.ChangeCurrentState(4)
           }
           else
           {
@@ -1511,6 +1633,13 @@ class Menu
           }
         }
         break;
+      case 8:
+        if (this.cupEndButs.Back.ClickedOn(event.x, event.y))
+        {
+          this.cup.initialized = false;
+          this.selMen.Reset();
+          this.ChangeCurrentState(1);
+        }
     }
   }
 
@@ -1592,6 +1721,8 @@ class Menu
     case (7):
       this.RedoGameFinishedMenuButs();
       break;
+    case(8):
+      this.RedoEndCupButs();
     }
     this.DrawMenu();
   }
@@ -1603,7 +1734,19 @@ class Menu
     this.g.aTeam = allTeams[this.aTeam];
     this.g.ResetGame();
     this.g.forceResult = this.inCup;
-    this.g.Render();
+    if (this.simulateGame && this.inCup)
+    {
+      this.g.isDrawing = false;
+      while (this.currentState == 0)
+      {
+        this.g.Turn();
+      }
+    }
+    else
+    {
+      this.g.isDrawing = true;
+      this.g.Render();
+    }
     if (this.autoplay)
     {
       turnInterval = setInterval(this.g.Turn.bind(this.g), 500);
